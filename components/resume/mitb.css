@@ -1,0 +1,185 @@
+/*
+ * MITB SMU resume template, matched to the candidate's base CV (SMU CV.docx):
+ * A4, Calibri, 13mm top/bottom and 12.7mm left/right margins, 10.5pt body.
+ * Used verbatim by the editor preview and the PDF route.
+ */
+
+.mitb-page {
+  --mitb-margin-x: 12.7mm;
+  --mitb-margin-y: 13mm;
+  --mitb-link: #0000ff;
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--mitb-margin-y) var(--mitb-margin-x);
+  background: #fff;
+  color: #000;
+  /* Calibri where installed (Windows / Office); Carlito is metric-compatible and self-hosted as a fallback. */
+  font-family: Calibri, var(--font-resume), Carlito, "Segoe UI", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.235; /* Calibri single spacing, as measured in Word */
+  position: relative;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-kerning: normal;
+  font-variant-ligatures: none; /* Word doesn't apply Calibri's "ti"/"ft" ligatures */
+}
+.mitb-page *,
+.mitb-page *::before,
+.mitb-page *::after {
+  box-sizing: border-box;
+}
+.mitb-page b,
+.mitb-page strong {
+  font-weight: 700;
+}
+
+/* Header ---------------------------------------------------------- */
+.mitb-header {
+  margin-bottom: 0;
+}
+.mitb-name {
+  text-align: center;
+  font-size: 14pt;
+  font-weight: 700;
+  font-variant: small-caps;
+  line-height: 1.2;
+  margin-bottom: 6pt;
+}
+.mitb-contact {
+  display: grid;
+  grid-template-columns: 4.1% 32.8% 3.7% 14.9% 3.4% 41.1%; /* the base CV's header table grid */
+  font-size: 10.5pt;
+  align-items: start;
+}
+.mitb-contact-item {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mitb-contact a {
+  color: inherit;
+  text-decoration: none;
+}
+.mitb-contact a.mitb-link {
+  color: var(--mitb-link);
+  text-decoration: underline;
+}
+
+/* Sections -------------------------------------------------------- */
+.mitb-section {
+  margin-top: 13pt; /* one blank line, as in the base CV */
+}
+.mitb-section:first-of-type {
+  margin-top: 2pt;
+}
+.mitb-section-title {
+  font-size: 10.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1.5pt solid #000;
+  padding-bottom: 0.5pt;
+  margin-bottom: 0;
+}
+
+.mitb-entry {
+  margin-top: 0; /* entries follow each other directly, as in Word */
+}
+.mitb-edu:first-child {
+  margin-top: 3.5pt;
+}
+.mitb-edu + .mitb-edu {
+  margin-top: 12pt; /* blank line between degrees */
+}
+.mitb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8pt;
+}
+.mitb-row > .mitb-right {
+  flex: none;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.mitb-strong {
+  font-weight: 700;
+}
+.mitb-caps {
+  text-transform: uppercase;
+}
+.mitb-italic {
+  font-style: italic;
+}
+.mitb-role {
+  margin-top: 4pt;
+}
+.mitb-role:first-child {
+  margin-top: 4pt;
+}
+.mitb-descriptor {
+  font-style: italic;
+}
+
+/* Bullets (● with a hanging indent) -------------------------------- */
+.mitb-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mitb-bullet {
+  position: relative;
+  padding-left: 17pt;
+}
+.mitb-bullet::before {
+  content: "\25CF";
+  position: absolute;
+  left: 3pt;
+  top: 3pt; /* centre the dot on the first line */
+  font-size: 7.5pt;
+  line-height: 1;
+}
+.mitb-project .mitb-bullet {
+  font-size: 10pt; /* project bullets are 10pt in the base CV */
+}
+
+/* Additional ------------------------------------------------------- */
+.mitb-additional-line {
+  position: relative;
+  padding-left: 17pt;
+}
+.mitb-additional-line::before {
+  content: "\25CF";
+  position: absolute;
+  left: 3pt;
+  top: 3pt; /* centre the dot on the first line */
+  font-size: 7.5pt;
+  line-height: 1;
+}
+.mitb-label {
+  font-weight: 700;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .mitb-page {
+    box-shadow: none !important;
+  }
+  .no-print,
+  .mitb-page [data-sel-overlay] {
+    display: none !important;
+  }
+  .mitb-page [data-el] {
+    outline: none !important;
+    background: none !important;
+  }
+}

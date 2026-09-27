@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Single-row profile. The structured profile (education, companies → roles →
+// bullet bank, projects, activities, certifications, skills, strategic notes)
+// is stored as one Zod-validated JSON document; see lib/schemas.ts `Profile`.
+model Profile {
+  id        Int      @id @default(1)
+  data      String
+  updatedAt DateTime @updatedAt
+}
+
+model Settings {
+  id           Int      @id @default(1)
+  systemPrompt String
+  model        String
+  /// "api" = Anthropic API key (pay per token); "claude-plan" = Claude Agent SDK on your Claude subscription
+  provider     String   @default("api")
+  updatedAt    DateTime @updatedAt
+}
+
+model Application {
+  id             String   @id
+  company        String
+  roleTitle      String
+  jobUrl         String?
+  jobDescription String
+  status         String   @default("Draft")
+  analysis       String?
+  probingQA      String?
+  rationale      String?
+  saveAs         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions    ResumeVersion[]
+  exports     Export[]
+  activities  ActivityLog[]
+  suggestions ProfileSuggestion[]
+  usage       AiUsage[]
+}
+
+model ResumeVersion {
+  id            String      @id
+  applicationId String
+  resume        String
+  changeSummary String
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model Export {
+  id            String      @id
+  applicationId String
+  versionId     String
+  filename      String
+  filePath      String
+  pageCount     Int
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id            String       @id
+  type          String
+  message       String
+  applicationId String?
+  createdAt     DateTime     @default(now())
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+}
+
+model ProfileSuggestion {
+  id            String       @id
+  applicationId String?
+  text          String
+  kind          String       @default("fact")
+  status        String       @default("pending")
+  createdAt     DateTime     @default(now())
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+}
+
+model AiUsage {
+  id                String       @id
+  applicationId     String?
+  endpoint          String
+  model             String
+  inputTokens       Int
+  outputTokens      Int
+  cacheReadTokens   Int          @default(0)
+  cacheWriteTokens  Int          @default(0)
+  provider          String       @default("api")
+  createdAt         DateTime     @default(now())
+  application       Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+}
+
+/// A document (PDF / PPTX / DOCX / text) attached to a profile item — a role,
+/// project, activity or education entry (by its id in the Profile JSON). Its text
+/// is extracted and summarised by the AI, and the summary is included in the
+/// Master Knowledge Document for every resume.
+model Attachment {
+  id            String   @id
+  itemId        String
+  itemType      String
+  itemLabel     String
+  filename      String
+  mimeType      String
+  sizeBytes     Int
+  filePath      String
+  extractedText String
+  truncated     Boolean  @default(false)
+  status        String   @default("processing") // processing | ready | error
+  error         String?
+  summary       String?  // JSON: AttachmentSummary
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([itemId])
+}

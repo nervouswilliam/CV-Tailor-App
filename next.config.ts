@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["playwright", "playwright-core", "@prisma/client", "@anthropic-ai/claude-agent-sdk", "unpdf"],
 };
 
 export default nextConfig;
