@@ -6,14 +6,16 @@ import {
   EducationEntrySchema,
   ProjectSchema,
   RoleSchema,
+  SECTION_KEYS,
   type Bullet,
   type Profile,
   type Resume,
+  type SectionKey,
 } from "./schemas";
 import { newId } from "./ids";
 
+export type { SectionKey };
 export type AdditionalKey = "certifications" | "technicalSkills" | "languages" | "workAuthorization" | "volunteer";
-export type SectionKey = "education" | "experience" | "academicProjects" | "extracurricular" | "additional";
 export type ElementKind = "bullet" | "role" | "company" | "education" | "project" | "activity" | "additional" | "section";
 
 export const ADDITIONAL_KEYS: AdditionalKey[] = [
@@ -38,8 +40,17 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   additional: "Additional",
 };
 
-/** Section order on the page, as in the base CV (projects before experience). */
-export const SECTION_ORDER: SectionKey[] = ["education", "academicProjects", "experience", "extracurricular", "additional"];
+/** Default section order, as in the base CV (projects before experience). */
+export const SECTION_ORDER: SectionKey[] = [...SECTION_KEYS];
+
+/** Id of the container holding the sections (for drag-and-drop reordering). */
+export const SECTIONS_CONTAINER = "sections";
+
+/** A resume's section order: its own order (deduplicated), with any missing sections appended in default order. */
+export function sectionOrderOf(resume: Pick<Resume, "sectionOrder">): SectionKey[] {
+  const own = (resume.sectionOrder ?? []).filter((k, i, a) => SECTION_KEYS.includes(k) && a.indexOf(k) === i);
+  return [...own, ...SECTION_ORDER.filter((k) => !own.includes(k))];
+}
 
 export const additionalId = (k: AdditionalKey) => `additional.${k}`;
 export const sectionId = (k: SectionKey) => `section.${k}`;
@@ -200,11 +211,21 @@ export function deleteElement(resume: Resume, id: string): Resume {
   return r;
 }
 
-/** Reorder the children of a container. `containerId` is a section id, a company id (roles) or a role/project/activity id (bullets). */
+/**
+ * Reorder the children of a container. `containerId` is SECTIONS_CONTAINER (whole sections, by section id),
+ * a section id (its entries), a company id (roles) or a role/project/activity id (bullets).
+ */
 export function reorderChildren(resume: Resume, containerId: string, orderedIds: string[]): Resume {
   const r = structuredClone(resume);
   const sort = <T extends { id: string }>(arr: T[]) =>
     [...arr].sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+  if (containerId === SECTIONS_CONTAINER) {
+    // Only visible sections are dragged; empty ones keep their slots and the visible ones fill the rest in the new order.
+    const moved = orderedIds.map((id) => id.replace(/^section\./, "") as SectionKey).filter((k) => SECTION_KEYS.includes(k));
+    const queue = [...moved];
+    r.sectionOrder = sectionOrderOf(r).map((k) => (moved.includes(k) ? queue.shift()! : k));
+    return r;
+  }
   if (containerId.startsWith("section.")) {
     const k = containerId.slice(8) as SectionKey;
     if (k === "additional") return r;

@@ -14,6 +14,7 @@ import {
   type Profile,
   PROJECT_TYPES,
   ACTIVITY_KINDS,
+  SECTION_KEYS,
 } from "./schemas";
 import { newId } from "./ids";
 
@@ -62,6 +63,9 @@ const AiActivity = z.object({
 });
 
 export const AiResumeBody = z.object({
+  sectionOrder: z
+    .array(z.enum(SECTION_KEYS))
+    .describe("Order of the sections on the page. Keep the current order unless the candidate asks to move a section."),
   education: z.array(AiEducation),
   experience: z.array(AiCompany),
   academicProjects: z.array(AiProject).describe("At most 2; empty array to omit the section"),
@@ -186,8 +190,12 @@ export function fromAiResume(body: AiResumeBodyT, header: ResumeHeader): Resume 
     text: b.text,
     sourceRef: nonEmpty(b.sourceRef),
   });
+  // Normalise: dedupe, then append any section the model left out, in default order.
+  const own = body.sectionOrder.filter((k, i, a) => a.indexOf(k) === i);
+  const sectionOrder = [...own, ...SECTION_KEYS.filter((k) => !own.includes(k))];
   return {
     header,
+    sectionOrder,
     education: body.education.map((e) => ({
       id: e.id,
       institution: e.institution,
@@ -224,7 +232,9 @@ export function toAiResume(r: Resume): AiResumeBodyT {
     text: b.text,
     sourceRef: b.sourceRef ?? "",
   });
+  const own = (r.sectionOrder ?? []).filter((k, i, a) => a.indexOf(k) === i);
   return {
+    sectionOrder: [...own, ...SECTION_KEYS.filter((k) => !own.includes(k))],
     education: r.education.map((e) => ({
       id: e.id,
       institution: e.institution,

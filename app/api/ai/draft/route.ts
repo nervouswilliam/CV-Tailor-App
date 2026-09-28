@@ -35,7 +35,7 @@ ${answersContext(app.probingQA)}
 Carry out Steps 4 and 5: draft the tailored one-page resume in the MITB SMU format, then explain your decisions.
 
 - It must fit on ONE A4 page (Calibri 10.5pt, ~1.3 cm margins): roughly 55–60 lines of content in total. A full-width bullet line holds ~125 characters; keep most bullets to one or two lines.
-- Section order is fixed by the template: Education, Academic Projects (optional, max 2), Experience, Extra-curricular (optional), Additional. Leave optional sections as [] when they don't strengthen this application.
+- Use the default section order ["education", "academicProjects", "experience", "extracurricular", "additional"] (the candidate can reorder later). Academic Projects max 2; leave optional sections as [] when they don't strengthen this application.
 - Within Experience, list companies newest first and roles within a company newest first.
 - Use company descriptors from the profile (edit for relevance if helpful). Use dates exactly as in the profile.
 - Additional: certifications, technical skills (most relevant first, matching the JD's terms where truthful), languages and work authorization from the profile; volunteer only if relevant.

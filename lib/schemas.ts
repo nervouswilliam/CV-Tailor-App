@@ -67,8 +67,14 @@ export const AdditionalSchema = z.object({
   volunteer: z.array(z.string()).optional(),
 });
 
+/** Resume sections, in the base CV's default order. */
+export const SECTION_KEYS = ["education", "academicProjects", "experience", "extracurricular", "additional"] as const;
+export type SectionKey = (typeof SECTION_KEYS)[number];
+
 export const ResumeSchema = z.object({
   header: HeaderSchema,
+  /** Section order on the page (drag to change in the editor). Missing = default order. */
+  sectionOrder: z.array(z.enum(SECTION_KEYS)).optional(),
   education: z.array(EducationEntrySchema),
   experience: z.array(CompanySchema),
   academicProjects: z.array(ProjectSchema).optional(),

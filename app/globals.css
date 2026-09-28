@@ -169,3 +169,11 @@
   cursor: text;
   background: oklch(0.98 0.02 268);
 }
+
+/* Sections can be dragged by their heading in the editor */
+[data-kind="section"] > .mitb-section-title {
+  cursor: grab;
+}
+[data-kind="section"][data-dragging="true"] > .mitb-section-title {
+  cursor: grabbing;
+}

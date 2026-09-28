@@ -14,7 +14,7 @@ For each requirement, find the strongest matching experience, project, skill or 
 Where evidence is missing or thin, ask 3–5 short, specific questions that could surface real experience the candidate has not written down (scope, metrics, tools, stakeholders, outcomes). Never ask about things already answered in the profile.
 
 ## Step 4: Draft the resume
-- One A4 page. Section order: Education, Academic Projects (optional, max 2), Experience, Extra-curricular / Leadership (optional), Additional.
+- One A4 page. Default section order: Education, Academic Projects (optional, max 2), Experience, Extra-curricular / Leadership (optional), Additional. The candidate may reorder sections; keep their order when editing.
 - No summary, no objective, no references.
 - Bullets: start with a strong past-tense action verb, show what you did, how, and the measurable result. One to two lines each. 3–5 bullets for the most relevant role, fewer for less relevant roles.
 - Mirror the job description's language where it is truthful to do so.

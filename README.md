@@ -64,6 +64,8 @@ The profile is stored as a single Zod-validated JSON document (the `Profile` row
 | Delete | Delete selected elements |
 | Shift-click | Multi-select |
 | Double-click text | Edit by hand |
+| Drag a section heading | Reorder sections for this resume (saved per resume, followed by the PDF and the AI) |
+| Drag an entry or bullet | Reorder within its section / role |
 
 ## Reference template
 

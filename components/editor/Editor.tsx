@@ -23,6 +23,7 @@ import {
   Check,
   RotateCw,
   Eye,
+  FolderOpen,
 } from "lucide-react";
 import { api, ApiError, streamApi } from "@/lib/client-api";
 import { newId } from "@/lib/ids";
@@ -53,6 +54,9 @@ import {
   findElement,
   profileSourceIds,
   reorderChildren,
+  SECTIONS_CONTAINER,
+  SECTION_LABELS,
+  sectionOrderOf,
   replaceElement,
   resumePlainText,
   sanitiseFilename,
@@ -132,6 +136,49 @@ export function Editor({ id }: { id: string }) {
   const [measure, setMeasure] = useState<Measure | null>(null);
   const autoFit = useRef(params.get("fresh") === "1");
   const [exporting, setExporting] = useState(false);
+  // Folder PDFs are saved to ("" = the browser's normal download).
+  const [exportDir, setExportDir] = useState("");
+  const [savedExportDir, setSavedExportDir] = useState("");
+  const [suggestedDir, setSuggestedDir] = useState("");
+  const [picking, setPicking] = useState(false);
+
+  useEffect(() => {
+    api<{ exportDir: string; suggestedExportDir: string }>("/api/preferences")
+      .then((p) => {
+        setExportDir(p.exportDir);
+        setSavedExportDir(p.exportDir);
+        setSuggestedDir(p.suggestedExportDir);
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveExportDir = useCallback(
+    async (dir: string) => {
+      if (dir.trim() === savedExportDir) return setExportDir(savedExportDir);
+      try {
+        const p = await api<{ exportDir: string }>("/api/preferences", { method: "PUT", json: { exportDir: dir } });
+        setExportDir(p.exportDir);
+        setSavedExportDir(p.exportDir);
+        toast.success(p.exportDir ? "PDFs will be saved to this folder" : "PDFs will download through the browser", { description: p.exportDir || undefined });
+      } catch (e) {
+        setExportDir(savedExportDir);
+        toast.error("Can't use that folder", { description: (e as Error).message });
+      }
+    },
+    [savedExportDir],
+  );
+
+  const browseFolder = useCallback(async () => {
+    setPicking(true);
+    try {
+      const r = await api<{ path: string | null }>("/api/system/pick-folder", { method: "POST", json: { initial: exportDir || suggestedDir } });
+      if (r.path) await saveExportDir(r.path);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setPicking(false);
+    }
+  }, [exportDir, suggestedDir, saveExportDir]);
   const [confirmExport, setConfirmExport] = useState(false);
 
   /* ---------------- load ---------------- */
@@ -430,7 +477,12 @@ export function Editor({ id }: { id: string }) {
   const onReorder = (containerId: string, ids: string[]) => {
     const base = currentRef.current;
     if (!base) return;
-    void commit(reorderChildren(base, containerId, ids), `Reordered ${findElement(base, containerId)?.label ?? "section"}`);
+    const next = reorderChildren(base, containerId, ids);
+    const label =
+      containerId === SECTIONS_CONTAINER
+        ? `Moved sections: ${sectionOrderOf(next).map((k) => SECTION_LABELS[k].split(" /")[0]).join(" → ")}`
+        : `Reordered ${findElement(base, containerId)?.label ?? "section"}`;
+    void commit(next, label, containerId === SECTIONS_CONTAINER ? { activity: "Reordered sections" } : {});
   };
 
   const onDropBullet = useCallback(
@@ -456,21 +508,36 @@ export function Editor({ id }: { id: string }) {
     setSaveAs(filename);
     setExporting(true);
     try {
-      const res = await fetch(`/api/applications/${id}/export`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename }) });
+      const res = await fetch(`/api/applications/${id}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, toFolder: true }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? `Export failed (${res.status})`);
       }
       const pages = Number(res.headers.get("X-Page-Count") ?? 1);
+      const savedPath = decodeURIComponent(res.headers.get("X-Saved-Path") ?? "");
+      const saveError = decodeURIComponent(res.headers.get("X-Save-Error") ?? "");
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${filename}.pdf`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      if (pages > 1) toast.warning(`Saved ${filename}.pdf, but it is ${pages} pages long.`);
-      else toast.success(`Saved ${filename}.pdf`, { description: "1 page · data/exports" });
+      if (!savedPath) {
+        // No folder chosen (or it failed): hand the file to the browser's download.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${filename}.pdf`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+      if (saveError) toast.warning("Couldn't save to your folder, so it was downloaded instead", { description: saveError });
+      const pageNote = pages > 1 ? `Warning: ${pages} pages` : "1 page";
+      toast[pages > 1 ? "warning" : "success"](`Saved ${filename}.pdf`, {
+        description: savedPath ? `${pageNote} · ${savedPath}` : `${pageNote} · browser downloads`,
+        action: savedPath
+          ? { label: "Show in folder", onClick: () => void api("/api/system/reveal", { method: "POST", json: { path: savedPath } }).catch((e) => toast.error(e.message)) }
+          : undefined,
+      });
     } catch (e) {
       toast.error("PDF export failed", { description: (e as Error).message });
     } finally {
@@ -549,7 +616,7 @@ export function Editor({ id }: { id: string }) {
   return (
     <div className="flex h-full flex-col">
       {/* Header / save bar */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-background px-3">
+      <header className="flex h-[4.25rem] shrink-0 items-center gap-3 border-b bg-background px-3">
         <Button variant="ghost" size="icon-sm" onClick={() => router.push("/")} aria-label="Back to dashboard">
           <ArrowLeft />
         </Button>
@@ -583,8 +650,8 @@ export function Editor({ id }: { id: string }) {
             </TooltipContent>
           </Tooltip>
         )}
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="saveas" className="text-xs text-muted-foreground">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-1.5 gap-y-1">
+          <label htmlFor="saveas" className="text-right text-xs text-muted-foreground">
             Save as
           </label>
           <Input
@@ -596,9 +663,25 @@ export function Editor({ id }: { id: string }) {
               setSaveAs(f);
               void api(`/api/applications/${id}`, { method: "PATCH", json: { saveAs: f } });
             }}
-            className="h-8 w-[22rem] font-mono text-xs"
+            className="h-7 w-[22rem] font-mono text-xs"
           />
           <span className="text-xs text-muted-foreground">.pdf</span>
+          <label htmlFor="saveto" className="text-right text-xs text-muted-foreground">
+            Save to
+          </label>
+          <Input
+            id="saveto"
+            value={exportDir}
+            onChange={(e) => setExportDir(e.target.value)}
+            onBlur={(e) => void saveExportDir(e.currentTarget.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            placeholder={suggestedDir ? `e.g. ${suggestedDir} (empty = browser downloads)` : "Folder (empty = browser downloads)"}
+            title={exportDir || "Empty: PDFs download through the browser"}
+            className="h-7 w-[22rem] font-mono text-xs"
+          />
+          <Button variant="outline" size="xs" onClick={browseFolder} disabled={picking} title="Choose a folder">
+            {picking ? <Loader2 className="animate-spin" /> : <FolderOpen />} Browse…
+          </Button>
         </div>
         <Button onClick={requestExport} disabled={exporting}>
           {exporting ? <Loader2 className="animate-spin" /> : <Download />} Save PDF

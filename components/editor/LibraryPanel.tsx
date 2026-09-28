@@ -6,6 +6,7 @@ import { GripVertical, Plus, Search, Library, Briefcase, FolderGit2, Users } fro
 import type { BankBullet, Profile, Resume } from "@/lib/schemas";
 import { allBullets } from "@/lib/resume-utils";
 import { cn } from "@/lib/utils";
+import { RichText } from "@/components/resume/MitbTemplate";
 
 export type LibraryAdd = { kind: "bullet" | "company" | "role" | "project" | "activity"; id: string; label: string; text?: string };
 
@@ -116,7 +117,9 @@ export function LibraryPanel({ profile, resume, onAdd, busy }: { profile: Profil
                           className={cn("group flex cursor-grab items-start gap-1 rounded-md px-1 py-1 text-xs leading-snug hover:bg-muted active:cursor-grabbing")}
                         >
                           <GripVertical className="mt-0.5 size-3 shrink-0 text-muted-foreground/40" />
-                          <span className="flex-1">{b.text}</span>
+                          <span className="flex-1">
+                            <RichText text={b.text} />
+                          </span>
                           <button
                             disabled={busy}
                             onClick={() => onAdd({ kind: "bullet", id: b.id, label: b.text.slice(0, 50), text: b.text })}

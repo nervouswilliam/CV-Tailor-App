@@ -4,7 +4,8 @@ import {
   ADDITIONAL_KEYS,
   ADDITIONAL_LABELS,
   SECTION_LABELS,
-  SECTION_ORDER,
+  SECTIONS_CONTAINER,
+  sectionOrderOf,
   additionalId,
   formatMoney,
   sectionId,
@@ -27,8 +28,11 @@ export type TemplateHooks = {
   /** Render a text field (default: money-formatted, with **bold** spans). */
   text?: (id: string, field: string, value: string) => ReactNode;
   /** Render a list of children (bullets / roles / section entries); lets the editor add drag-and-drop or diff ghosts. */
-  list?: (containerId: string, kind: "bullets" | "roles" | "entries", items: { id: string; node: ReactNode }[]) => ReactNode;
+  list?: (containerId: string, kind: ListKind, items: { id: string; node: ReactNode }[]) => ReactNode;
 };
+
+/** Kinds of reorderable lists: whole sections, section entries, a company's roles, or bullets. */
+export type ListKind = "sections" | "entries" | "roles" | "bullets";
 
 /** Render text with **bold** markers (used for key tools and metrics inside bullets). */
 export function RichText({ text }: { text: string }) {
@@ -56,7 +60,7 @@ export function MitbTemplate({ resume, hooks = {}, className }: { resume: Resume
   const T = hooks.text ?? defaultText;
   const E = (id: string, kind: ElementKind, node: ReactNode, block = true) =>
     hooks.element ? hooks.element(id, kind, node, { block }) : node;
-  const L = (containerId: string, kind: "bullets" | "roles" | "entries", items: { id: string; node: ReactNode }[]) =>
+  const L = (containerId: string, kind: ListKind, items: { id: string; node: ReactNode }[]) =>
     hooks.list ? hooks.list(containerId, kind, items) : items.map((i) => <FragmentKey key={i.id}>{i.node}</FragmentKey>);
 
   const bullets = (containerId: string, bs: Bullet[]) =>
@@ -275,9 +279,13 @@ export function MitbTemplate({ resume, hooks = {}, className }: { resume: Resume
           )}
         </header>
 
-        {SECTION_ORDER.map((k) => (
-          <FragmentKey key={k}>{sections[k]()}</FragmentKey>
-        ))}
+        {L(
+          SECTIONS_CONTAINER,
+          "sections",
+          sectionOrderOf(resume)
+            .map((k) => ({ id: sectionId(k), node: sections[k]() }))
+            .filter((s) => Boolean(s.node)),
+        )}
       </div>
     </div>
   );

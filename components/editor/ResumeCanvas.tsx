@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MitbTemplate, RichText, displayValue, type TemplateHooks } from "@/components/resume/MitbTemplate";
+import { MitbTemplate, RichText, displayValue, type ListKind, type TemplateHooks } from "@/components/resume/MitbTemplate";
 import type { Resume } from "@/lib/schemas";
 import { childrenOf, findElement, formatMoney, getElementField, type ElementKind } from "@/lib/resume-utils";
 
@@ -186,7 +186,7 @@ function Keyed({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function removedGhosts(base: Resume, next: Resume, containerId: string, kind: "bullets" | "roles" | "entries") {
+function removedGhosts(base: Resume, next: Resume, containerId: string, kind: ListKind) {
   const before = childrenOf(base, containerId);
   const after = new Set(childrenOf(next, containerId).map((c) => c.id));
   // Only render ghosts inside containers that still exist in the proposal.
